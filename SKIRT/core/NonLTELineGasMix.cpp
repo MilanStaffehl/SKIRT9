@@ -108,14 +108,14 @@ void NonLTELineGasMix::setupSelfBefore()
         auto& partner = _colPartner.back();
         partner.name = colName;
 
-        // load the temperature grid points
+        // load the temperature grid points for de-excitation coefficients
         {
             TextInFile infile(this, name + "_Col_" + colName + "_Temp.txt", "temperature grid", true);
             infile.addColumn("Temperature", "temperature", "K");
             infile.readAllColumns(partner.T);
         }
 
-        // load the transition indices and coefficients
+        // load the transition indices and coefficients for collisional de-excitation
         {
             int numTemperatures = partner.T.size();
             TextInFile infile(this, name + "_Col_" + colName + "_Coeff.txt", "collisional transitions", true);
@@ -137,6 +137,7 @@ void NonLTELineGasMix::setupSelfBefore()
                 }
             }
         }
+        // TODO: Load the coefficients for collisional excitation from file
         partner.numColTrans = partner.indexUpCol.size();
     }
     _numColPartners = colNames.size();
@@ -486,14 +487,11 @@ UpdateStatus NonLTELineGasMix::updateSpecificState(MaterialState* state, const A
             {
                 int up = partner.indexUpCol[t];
                 int low = partner.indexLowCol[t];
-                double weightRatio = _weight[up] / _weight[low];
-                double energyDiff = _energy[up] - _energy[low];
-                double Kconversion = weightRatio * exp(-energyDiff / Constants::k() / T);
                 // determine Kul by interpolation from the temperature-dependent table
                 double Kul = NR::clampedValue<NR::interpolateLogLog>(T, partner.T, partner.Kul[t]);
 
-                // determine Klu from Kul
-                double Klu = Kul * Kconversion;
+                // determine Klu similarly
+                double Klu = NR::clampedValue<NR::interpolateLogLog>(T, partner.T, partner.Klu[t]);
 
                 // add the coefficients after multiplication by the partner number density
                 double n = state->colPartnerDensity(c);

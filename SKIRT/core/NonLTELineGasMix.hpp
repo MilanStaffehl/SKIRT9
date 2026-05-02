@@ -545,6 +545,7 @@ private:
         vector<int> indexUpCol;   // the upper energy level index for each collisional transition
         vector<int> indexLowCol;  // the lower energy level index for each collisional transition
         vector<Array> Kul;        // the coefficient for each collisional transition and for each temperature
+        vector<Array> Klu;        // the coefficient for collisional excitation, related to Kul
     };
     int _numColPartners{0};          // the number of collisional interaction partners -- index c
     vector<ColPartner> _colPartner;  // the data for each collisional partner

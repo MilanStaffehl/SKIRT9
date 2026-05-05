@@ -118,7 +118,7 @@ void NonLTELineGasMix::setupSelfBefore()
         // load the transition indices and coefficients for collisional de-excitation
         {
             int numTemperatures = partner.T.size();
-            TextInFile infile(this, name + "_Col_" + colName + "_Coeff.txt", "collisional transitions", true);
+            TextInFile infile(this, name + "_Col_" + colName + "_Coeff_de.txt", "collisional transitions", true);
             infile.addColumn("Up index");
             infile.addColumn("Low index");
             for (int i = 0; i != numTemperatures; ++i) infile.addColumn("Collisional K", "collisionalrate", "cm3/s");
@@ -131,13 +131,33 @@ void NonLTELineGasMix::setupSelfBefore()
                 {
                     partner.indexUpCol.push_back(indexUp);
                     partner.indexLowCol.push_back(indexLow);
-                    Array coeff(numTemperatures);
-                    for (int i = 0; i != numTemperatures; ++i) coeff[i] = row[i + 2];
-                    partner.Kul.emplace_back(coeff);
+                    Array coeff_ul(numTemperatures);
+                    for (int i = 0; i != numTemperatures; ++i) coeff_ul[i] = row[i + 2];
+                    partner.Kul.emplace_back(coeff_ul);
                 }
             }
         }
-        // TODO: Load the coefficients for collisional excitation from file
+
+        // load the transition indices and coefficients for collisional excitation
+        {
+            int numTemperatures = partner.T.size();
+            TextInFile infile(this, name + "_Col_" + colName + "_Coeff_ex.txt", "collisional transitions", true);
+            infile.addColumn("Up index");
+            infile.addColumn("Low index");
+            for (int i = 0; i != numTemperatures; ++i) infile.addColumn("Collisional K", "collisionalrate", "cm3/s");
+            Array row;
+            while (infile.readRow(row))
+            {
+                int indexUp = row[0];
+                int indexLow = row[1];
+                if (indexUp < _numLevels && indexLow < _numLevels)
+                {
+                    Array coeff_lu(numTemperatures);
+                    for (int i = 0; i != numTemperatures; ++i) coeff_lu[i] = row[i + 2];
+                    partner.Klu.emplace_back(coeff_lu);
+                }
+            }
+        }
         partner.numColTrans = partner.indexUpCol.size();
     }
     _numColPartners = colNames.size();
